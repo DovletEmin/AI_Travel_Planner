@@ -47,4 +47,3 @@ htmlcov/
 .coverage.*
 
 # Environment variables
-.env
