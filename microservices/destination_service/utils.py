@@ -19,8 +19,12 @@ PLACES_DB: Dict[str, List[Dict]] = {
     ]
 }
 
-def get_places(interests: List[str], limit: int = 5) -> List[Dict]:
-    results = []
-    for interest in interests:
-        results.extend(PLACES_DB.get(interest, []))
-    return results[:limit]
+def get_places(interests: list[str], limit: int = 5):
+    places_db = [
+        {"name": "Eiffel Tower", "city": "Paris", "country": "FR"},
+        {"name": "Acropolis", "city": "Athens", "country": "GR"},
+        {"name": "Bondi Beach", "city": "Sydney", "country": "AU"},
+        {"name": "Statue of Liberty", "city": "New York", "country": "US"},
+        {"name": "Colosseum", "city": "Rome", "country": "IT"},
+    ]
+    return places_db[:limit]
