@@ -88,7 +88,7 @@ def get_weather(city: str):
         data = resp.json()
         return {
             # "source": "q",
-            # "city": data.get("name") or city,
+            "city": data.get("name") or city,
             "temperature": data["main"]["temp"],
             "description": data["weather"][0]["description"],
         }
