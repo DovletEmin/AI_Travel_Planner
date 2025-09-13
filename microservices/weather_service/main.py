@@ -10,7 +10,7 @@ import time
 dotenv_path = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path)
 
-app = FastAPI(title="Weather Service (with geocoding fallback)")
+app = FastAPI(title="Weather Service")
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 if not OPENWEATHER_API_KEY:
@@ -87,8 +87,8 @@ def get_weather(city: str):
     if resp.status_code == 200:
         data = resp.json()
         return {
-            "source": "q",
-            "city": data.get("name") or city,
+            # "source": "q",
+            # "city": data.get("name") or city,
             "temperature": data["main"]["temp"],
             "description": data["weather"][0]["description"],
         }
@@ -116,8 +116,8 @@ def get_weather(city: str):
 
         data2 = resp2.json()
         return {
-            "source": "geocoding->coords",
-            "city": data2.get("name") or city,
+            # "source": "geocoding->coords",
+            # "city": data2.get("name") or city,
             "temperature": data2["main"]["temp"],
             "description": data2["weather"][0]["description"],
             "coords": coords,
