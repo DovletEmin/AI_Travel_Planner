@@ -1,4 +1,3 @@
-# gateway_service/main.py
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Any, Dict
@@ -11,6 +10,7 @@ load_dotenv()
 
 DESTINATION_URL = os.getenv("DESTINATION_URL", "http://127.0.0.1:8001/destinations")
 WEATHER_URL = os.getenv("WEATHER_URL", "http://127.0.0.1:8002/weather")
+HOTEL_URL = os.getenv("HOTEL_URL", "http://127.0.0.1:8003/hotels")
 REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "10.0"))
 
 app = FastAPI(title="Gateway / Trip Planner")
@@ -20,10 +20,9 @@ class PlanRequest(BaseModel):
     limit: int = 5
     min_temp: Optional[float] = None
     max_temp: Optional[float] = None
-    weather_contains: Optional[str] = None 
+    weather_contains: Optional[str] = None
 
 async def fetch_weather_for_city(client: httpx.AsyncClient, city: str) -> Dict[str, Any]:
-    """Возвращает объект погоды или {'error': '...'}"""
     try:
         resp = await client.get(WEATHER_URL, params={"city": city}, timeout=REQUEST_TIMEOUT)
         if resp.status_code == 200:
@@ -35,11 +34,19 @@ async def fetch_weather_for_city(client: httpx.AsyncClient, city: str) -> Dict[s
     except httpx.RequestError as e:
         return {"error": f"weather service unreachable: {e}"}
 
+async def fetch_hotels_for_city(client: httpx.AsyncClient, city: str) -> List[Dict[str, Any]]:
+    try:
+        resp = await client.get(HOTEL_URL, params={"city": city}, timeout=REQUEST_TIMEOUT)
+        if resp.status_code == 200:
+            return resp.json().get("hotels", [])
+        else:
+            return []
+    except httpx.RequestError:
+        return []
+
 @app.post("/plan")
 async def plan_trip(req: PlanRequest):
-    params = []
-    for it in req.interests:
-        params.append(("interests", it))
+    params = [("interests", it) for it in req.interests]
     params.append(("limit", str(req.limit)))
 
     async with httpx.AsyncClient() as client:
@@ -54,11 +61,17 @@ async def plan_trip(req: PlanRequest):
         data = resp.json()
         places = data.get("destinations", [])
 
-        tasks = [fetch_weather_for_city(client, place.get("city", "")) for place in places]
-        weathers = await asyncio.gather(*tasks)
+        weather_tasks = [fetch_weather_for_city(client, place.get("city", "")) for place in places]
+        hotel_tasks = [fetch_hotels_for_city(client, place.get("city", "")) for place in places]
 
-        for place, weather in zip(places, weathers):
+        weathers, hotels_list = await asyncio.gather(
+            asyncio.gather(*weather_tasks),
+            asyncio.gather(*hotel_tasks)
+        )
+
+        for place, weather, hotels in zip(places, weathers, hotels_list):
             place["weather"] = weather
+            place["hotels"] = hotels
 
         def passes_filters(place: Dict) -> bool:
             w = place.get("weather", {})
