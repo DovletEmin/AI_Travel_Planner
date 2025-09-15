@@ -24,7 +24,7 @@ AI Travel Planner/
 
 1. Клонируй репозиторий:
    ```bash
-   git clone https://github.com/username/ai-travel-planner.git
+   git clone https://github.com/DovletEmin/AI_Travel_Planner.git
    cd ai-travel-planner
    ```
 
